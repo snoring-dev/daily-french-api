@@ -8,6 +8,7 @@ import { MailerModule } from '@nestjs-modules/mailer';
 import { AuthModule } from './auth/auth.module';
 import { FileUploadModule } from './file-upload/file-upload.module';
 import { AddressModule } from './address/address.module';
+import { WordsModule } from './words/words.module';
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { AddressModule } from './address/address.module';
     AuthModule,
     FileUploadModule,
     AddressModule,
+    WordsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
