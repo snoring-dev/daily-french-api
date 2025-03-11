@@ -1,4 +1,4 @@
-import * as argon2 from 'argon2-browser';
+import * as argon2 from 'argon2';
 import { randomBytes } from 'crypto';
 
 /**
@@ -7,17 +7,15 @@ import { randomBytes } from 'crypto';
  * @returns A promise that resolves to the encoded hash string
  */
 async function hashPassword(password: string): Promise<string> {
-  const result = await argon2.hash({
-    pass: password,
-    salt: randomBytes(16),
-    time: 3,
-    mem: 4096,
-    hashLen: 32,
+  const salt = randomBytes(16);
+  return argon2.hash(password, {
+    type: argon2.argon2id,
+    salt,
+    memoryCost: 4096,
+    timeCost: 3,
     parallelism: 1,
-    type: argon2.ArgonType.Argon2id,
+    hashLength: 32,
   });
-
-  return result.encoded;
 }
 
 /**
@@ -28,11 +26,7 @@ async function hashPassword(password: string): Promise<string> {
  */
 async function verifyPassword(hash: string, plain: string): Promise<boolean> {
   try {
-    const result = await argon2.verify({
-      pass: plain,
-      encoded: hash,
-    });
-    return result.verified;
+    return await argon2.verify(hash, plain);
   } catch (error) {
     return false;
   }

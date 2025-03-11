@@ -5,6 +5,7 @@ import {
   Injectable,
   NotFoundException,
   UnauthorizedException,
+  InternalServerErrorException,
 } from '@nestjs/common';
 import { MailerService } from '@nestjs-modules/mailer';
 import { eq } from 'drizzle-orm';
@@ -39,7 +40,13 @@ export class UserService {
         })
         .returning();
 
-      await this.sendVerificationEmail(email, verificationCode);
+      try {
+        await this.sendVerificationEmail(email, verificationCode);
+      } catch (emailError) {
+        // If email sending fails, we should delete the created user and throw the error
+        await this.db.delete(users).where(eq(users.id, user.id));
+        throw emailError;
+      }
 
       return { id: user.id, email: user.email, phoneNumber: user.phoneNumber };
     } catch (error) {
@@ -47,17 +54,27 @@ export class UserService {
       if (error.code === '23505') {
         throw new ConflictException('Email or phone number already exists');
       }
+      if (error.message?.includes('Email address is not verified')) {
+        throw new BadRequestException('The sender email address is not verified in AWS SES. Please contact support.');
+      }
       throw error;
     }
   }
 
   async sendVerificationEmail(email: string, code: string) {
-    await this.mailerService.sendMail({
-      to: email,
-      subject: 'Verify your email',
-      text: `Your verification code is: ${code}`,
-      html: `<p>Your verification code is: <strong>${code}</strong></p>`,
-    });
+    try {
+      await this.mailerService.sendMail({
+        to: email,
+        subject: 'Verify your email',
+        text: `Your verification code is: ${code}`,
+        html: `<p>Your verification code is: <strong>${code}</strong></p>`,
+      });
+    } catch (error) {
+      if (error.message?.includes('Email address is not verified')) {
+        throw new BadRequestException('Cannot send verification email: The recipient email address needs to be verified in AWS SES sandbox mode.');
+      }
+      throw new InternalServerErrorException('Failed to send verification email. Please try again later or contact support.');
+    }
   }
 
   async resendVerificationCode(email: string) {
@@ -75,14 +92,21 @@ export class UserService {
 
     const newVerificationCode = this.generateVerificationCode();
 
-    await this.db
-      .update(users)
-      .set({ verificationToken: newVerificationCode })
-      .where(eq(users.id, user.id));
+    try {
+      await this.db
+        .update(users)
+        .set({ verificationToken: newVerificationCode })
+        .where(eq(users.id, user.id));
 
-    await this.sendVerificationEmail(email, newVerificationCode);
+      await this.sendVerificationEmail(email, newVerificationCode);
 
-    return { message: 'New verification code sent' };
+      return { message: 'New verification code sent' };
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Failed to resend verification code. Please try again later.');
+    }
   }
 
   async verifyEmail(email: string, code: string) {
