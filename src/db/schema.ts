@@ -87,6 +87,13 @@ export const frenchWordsRelations = relations(frenchWords, ({ many }) => ({
   completions: many(completions),
 }));
 
+export const definitionsRelations = relations(definitions, ({ one }) => ({
+  word: one(frenchWords, {
+    fields: [definitions.wordId],
+    references: [frenchWords.id],
+  }),
+}));
+
 export const completionsRelations = relations(completions, ({ one }) => ({
   word: one(frenchWords, {
     fields: [completions.wordId],
