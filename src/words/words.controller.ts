@@ -9,6 +9,6 @@ export class WordsController {
 
   @Get('random')
   async getRandomWords() {
-    return this.wordsService.getRandomWordsWithDefinitions();
+    return this.wordsService.getRandomWordsWithDefinitions(3);
   }
 }
