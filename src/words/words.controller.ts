@@ -1,4 +1,4 @@
-import { Controller, Get, UseGuards } from '@nestjs/common';
+import { Controller, Get, UseGuards, Query, ParseIntPipe } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { WordsService } from './words.service';
 
@@ -10,5 +10,15 @@ export class WordsController {
   @Get('random')
   async getRandomWords() {
     return this.wordsService.getRandomWordsWithDefinitions(3);
+  }
+
+  @Get('ranked')
+  async getWordsWithRanking() {
+    return this.wordsService.getWordsWithRanking();
+  }
+
+  @Get('unranked')
+  async getWordsWithoutRanking() {
+    return this.wordsService.getWordsWithoutRanking();
   }
 }

@@ -44,6 +44,7 @@ export const addresses = pgTable('addresses', {
 export const frenchWords = pgTable('french_words', {
   id: serial('id').primaryKey(),
   word: varchar('word').notNull().unique(),
+  ranking: varchar('ranking', { length: 2 }),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });

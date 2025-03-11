@@ -50,6 +50,13 @@
       "when": 1741710538339,
       "tag": "0006_handy_wild_child",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1741727146496,
+      "tag": "0007_light_gorgon",
+      "breakpoints": true
     }
   ]
 }

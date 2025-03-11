@@ -1,0 +1,1 @@
+ALTER TABLE "french_words" ADD COLUMN "ranking" varchar(2);
