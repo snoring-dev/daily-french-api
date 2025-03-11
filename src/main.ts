@@ -112,9 +112,4 @@ async function bootstrap() {
   await app.listen(3000);
 }
 
-async function seed() {
-  await calculateWordsRanking();
-}
-
 bootstrap();
-seed();
