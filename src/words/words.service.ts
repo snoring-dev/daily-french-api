@@ -1,27 +1,66 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { eq, sql } from 'drizzle-orm';
-import { definitions, frenchWords } from '../db/schema';
+import { definitions, frenchWords, completions } from '../db/schema';
+import { DeepseekService } from './deepseek.service';
 
 @Injectable()
 export class WordsService {
-  constructor(@Inject('DATABASE') private db: any) {}
+  constructor(
+    @Inject('DATABASE') private db: any,
+    private deepseekService: DeepseekService,
+  ) {}
 
-  async getRandomWordsWithDefinitions(count: number = 5) {
+  async getRandomWordsWithDefinitions(count: number = 1) {
     const randomWords = await this.db
       .select({
         id: frenchWords.id,
         word: frenchWords.word,
-        definitions: sql<string[]>`array_agg(${definitions.definition})`,
+        definitions: sql<
+          string[]
+        >`array_agg(DISTINCT ${definitions.definition})`,
+        completions: sql<any[]>`array_agg(DISTINCT ${completions.content})`,
       })
       .from(frenchWords)
       .leftJoin(definitions, eq(frenchWords.id, definitions.wordId))
+      .leftJoin(completions, eq(frenchWords.id, completions.wordId))
       .groupBy(frenchWords.id, frenchWords.word)
       .orderBy(sql`RANDOM()`)
       .limit(count);
 
-    return randomWords.map((word) => ({
-      word: word.word,
-      definitions: word.definitions || [],
-    }));
+    const enrichedWords = await Promise.all(
+      randomWords.map(async (word) => {
+        const filteredCompletions =
+          word.completions.filter((c) => c !== null) || [];
+
+        if (filteredCompletions.length <= 0) {
+          const enrichmentStr = await this.deepseekService.getWordEnrichment(
+            word.word,
+          );
+          
+          // Parse the enrichment string to JSON
+          const enrichment = JSON.parse(enrichmentStr);
+
+          // Store the enrichment in the completions table
+          await this.db.insert(completions).values({
+            wordId: word.id,
+            content: enrichment, // Store as parsed JSON
+          });
+
+          return {
+            word: word.word,
+            definitions: word.definitions || [],
+            completions: enrichment,
+          };
+        }
+
+        return {
+          word: word.word,
+          definitions: word.definitions || [],
+          completions: filteredCompletions[0], // Take the first completion since they're all the same
+        };
+      }),
+    );
+
+    return enrichedWords;
   }
 }

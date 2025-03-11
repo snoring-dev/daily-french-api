@@ -7,6 +7,7 @@ import {
   timestamp,
   integer,
   boolean,
+  jsonb,
 } from 'drizzle-orm/pg-core';
 
 export const users = pgTable('users', {
@@ -57,6 +58,16 @@ export const definitions = pgTable('definitions', {
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
 
+export const completions = pgTable('completions', {
+  id: serial('id').primaryKey(),
+  wordId: integer('word_id')
+    .references(() => frenchWords.id)
+    .notNull(),
+  content: jsonb('content').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
 export const usersRelations = relations(users, ({ one }) => ({
   address: one(addresses, {
     fields: [users.id],
@@ -68,5 +79,17 @@ export const addressesRelations = relations(addresses, ({ one }) => ({
   user: one(users, {
     fields: [addresses.userId],
     references: [users.id],
+  }),
+}));
+
+export const frenchWordsRelations = relations(frenchWords, ({ many }) => ({
+  definitions: many(definitions),
+  completions: many(completions),
+}));
+
+export const completionsRelations = relations(completions, ({ one }) => ({
+  word: one(frenchWords, {
+    fields: [completions.wordId],
+    references: [frenchWords.id],
   }),
 }));

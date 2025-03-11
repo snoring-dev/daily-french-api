@@ -5,21 +5,21 @@ Vous êtes un professeur de français expérimenté. Pour le mot "${word}", four
   "mot": "${word}",
   "type": "verbe, adjectif, ...",
   "explication": "Définition claire et accessible du mot avec ses principaux usages en français",
-  "niveau_max": "B2",
+  "niveau_max": "B1",
   "phrases": [
     {
       "texte": "Phrase d'exemple 1",
-      "niveau": "A2",
+      "niveau": "A1",
       "contexte": "Description du contexte"
     },
     {
       "texte": "Phrase d'exemple 2",
-      "niveau": "B1",
+      "niveau": "A2",
       "contexte": "Description du contexte" 
     },
     {
       "texte": "Phrase d'exemple 3",
-      "niveau": "B2",
+      "niveau": "B1",
       "contexte": "Description du contexte"
     }
   ],
@@ -30,5 +30,5 @@ Vous êtes un professeur de français expérimenté. Pour le mot "${word}", four
   }
 }
 
-Les phrases doivent être simples, authentiques et adaptées au niveau indiqué. L'explication doit être accessible pour des apprenants de niveau B2 maximum. Le prompt d'image doit permettre de générer une illustration claire et pédagogique du concept.
+Les phrases doivent être simples, authentiques et adaptées au niveau indiqué. L'explication doit être accessible pour des apprenants de niveau B1 maximum. Le prompt d'image doit permettre de générer une illustration claire et pédagogique du concept.
 `;
