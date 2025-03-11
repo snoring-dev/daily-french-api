@@ -7,10 +7,10 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { MailerService } from '@nestjs-modules/mailer';
-import * as bcrypt from 'bcrypt';
 import { eq } from 'drizzle-orm';
 import { users } from 'src/db/schema';
 import { FileUploadService } from 'src/file-upload/file-upload.service';
+import { hashPassword } from 'src/utils/passwords';
 
 @Injectable()
 export class UserService {
@@ -25,7 +25,7 @@ export class UserService {
   }
 
   async registerUser(email: string, phoneNumber: string, password: string) {
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const hashedPassword = await hashPassword(password);
     const verificationCode = this.generateVerificationCode();
 
     try {
@@ -252,7 +252,7 @@ export class UserService {
       throw new UnauthorizedException('Invalid or expired reset code');
     }
 
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    const hashedPassword = await hashPassword(newPassword);
 
     await this.updateUserInfo(user.id, {
       hashedPassword: hashedPassword,
