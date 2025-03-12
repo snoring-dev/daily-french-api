@@ -8,7 +8,6 @@ import {
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { WordsService } from './words.service';
-import { User } from 'src/auth/user.decorator';
 import { Ranking } from 'src/utils/word_ranking';
 import { UserService } from 'src/users/users.service';
 
