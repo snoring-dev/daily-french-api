@@ -22,6 +22,7 @@ export const users = pgTable('users', {
   verificationToken: varchar('verification_token').unique(),
   resetCode: varchar('reset_code', { length: 8 }),
   resetCodeExpires: timestamp('reset_code_expires'),
+  languageLevel: varchar('language_level', { length: 2 }).default('A1'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
@@ -49,6 +50,18 @@ export const frenchWords = pgTable('french_words', {
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
 
+export const history = pgTable('history', {
+  id: serial('id').primaryKey(),
+  userId: integer('user_id')
+    .references(() => users.id)
+    .notNull(),
+  wordId: integer('word_id')
+    .references(() => frenchWords.id)
+    .notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
 export const definitions = pgTable('definitions', {
   id: serial('id').primaryKey(),
   wordId: integer('word_id')
@@ -69,11 +82,12 @@ export const completions = pgTable('completions', {
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
 
-export const usersRelations = relations(users, ({ one }) => ({
+export const usersRelations = relations(users, ({ one, many }) => ({
   address: one(addresses, {
     fields: [users.id],
     references: [addresses.userId],
   }),
+  history: many(history),
 }));
 
 export const addressesRelations = relations(addresses, ({ one }) => ({
@@ -86,6 +100,7 @@ export const addressesRelations = relations(addresses, ({ one }) => ({
 export const frenchWordsRelations = relations(frenchWords, ({ many }) => ({
   definitions: many(definitions),
   completions: many(completions),
+  history: many(history),
 }));
 
 export const definitionsRelations = relations(definitions, ({ one }) => ({
@@ -98,6 +113,17 @@ export const definitionsRelations = relations(definitions, ({ one }) => ({
 export const completionsRelations = relations(completions, ({ one }) => ({
   word: one(frenchWords, {
     fields: [completions.wordId],
+    references: [frenchWords.id],
+  }),
+}));
+
+export const historyRelations = relations(history, ({ one }) => ({
+  user: one(users, {
+    fields: [history.userId],
+    references: [users.id],
+  }),
+  word: one(frenchWords, {
+    fields: [history.wordId],
     references: [frenchWords.id],
   }),
 }));

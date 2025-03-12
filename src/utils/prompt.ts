@@ -1,11 +1,13 @@
-export const promptMessage = (word: string) => `
+import { Ranking } from './word_ranking';
+
+export const promptMessage = (word: string, level: Ranking) => `
 Vous êtes un professeur de français expérimenté. Pour le mot "${word}", fournissez une réponse structurée en format JSON suivant ce modèle :
 
 {
   "mot": "${word}",
   "type": "verbe, adjectif, ...",
   "explication": "Définition claire et accessible du mot avec ses principaux usages en français",
-  "niveau_max": "B1",
+  "niveau_max": "${level}",
   "phrases": [
     {
       "texte": "Phrase d'exemple 1",
@@ -30,5 +32,5 @@ Vous êtes un professeur de français expérimenté. Pour le mot "${word}", four
   }
 }
 
-Les phrases doivent être simples, authentiques et adaptées au niveau indiqué. L'explication doit être accessible pour des apprenants de niveau B1 maximum. Le prompt d'image doit permettre de générer une illustration claire et pédagogique du concept.
+Les phrases doivent être simples, authentiques et adaptées au niveau ${level}. L'explication doit être accessible pour des apprenants de niveau ${level} maximum. Le prompt d'image doit permettre de générer une illustration claire et pédagogique du concept.
 `;

@@ -1,5 +1,12 @@
 export type Ranking = 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2';
 
+export const RANKING_ORDER: Ranking[] = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
+
+export function getRankingsUpTo(level: Ranking): Ranking[] {
+  const levelIndex = RANKING_ORDER.reverse().indexOf(level);
+  return RANKING_ORDER.slice(0, levelIndex + 1);
+}
+
 export function determineCEFRLevel(word: string): Ranking {
   // Check if word is a string, if not convert it
   const wordStr = String(word || '');

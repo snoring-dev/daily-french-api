@@ -57,6 +57,13 @@
       "when": 1741727146496,
       "tag": "0007_light_gorgon",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1741761754029,
+      "tag": "0008_luxuriant_venom",
+      "breakpoints": true
     }
   ]
 }

@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import OpenAI from 'openai';
 import { promptMessage } from '../utils/prompt';
+import { Ranking } from 'src/utils/word_ranking';
 
 @Injectable()
 export class DeepseekService {
@@ -14,7 +15,7 @@ export class DeepseekService {
     });
   }
 
-  async getWordEnrichment(word: string): Promise<any> {
+  async getWordEnrichment(word: string, level: Ranking): Promise<any> {
     try {
       const completion = await this.openai.chat.completions.create({
         messages: [
@@ -22,7 +23,7 @@ export class DeepseekService {
             role: 'system',
             content: 'You are a helpful French language assistant.',
           },
-          { role: 'user', content: promptMessage(word) },
+          { role: 'user', content: promptMessage(word, level) },
         ],
         model: 'deepseek-chat',
       });

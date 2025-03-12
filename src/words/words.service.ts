@@ -1,7 +1,19 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { eq, sql, and, isNotNull, ne, or, isNull } from 'drizzle-orm';
-import { definitions, frenchWords, completions } from '../db/schema';
+import {
+  eq,
+  sql,
+  and,
+  isNotNull,
+  ne,
+  or,
+  isNull,
+  notInArray,
+  inArray,
+  desc,
+} from 'drizzle-orm';
+import { definitions, frenchWords, completions, history } from '../db/schema';
 import { DeepseekService } from './deepseek.service';
+import { getRankingsUpTo, Ranking } from 'src/utils/word_ranking';
 
 @Injectable()
 export class WordsService {
@@ -10,7 +22,11 @@ export class WordsService {
     private deepseekService: DeepseekService,
   ) {}
 
-  async getRandomWordsWithDefinitions(count: number = 1) {
+  async getRandomWordsWithDefinitions(
+    count: number = 1,
+    userId: number,
+    level: Ranking,
+  ) {
     const randomWords = await this.db
       .select({
         id: frenchWords.id,
@@ -21,6 +37,17 @@ export class WordsService {
         completions: sql<any[]>`array_agg(DISTINCT ${completions.content})`,
       })
       .from(frenchWords)
+      .where(
+        notInArray(
+          frenchWords.id,
+          this.db
+            .select({ wordId: history.wordId })
+            .from(history)
+            .where(eq(history.userId, userId)),
+        ),
+        isNotNull(frenchWords.ranking),
+        inArray(frenchWords.ranking, getRankingsUpTo(level)),
+      )
       .leftJoin(definitions, eq(frenchWords.id, definitions.wordId))
       .leftJoin(completions, eq(frenchWords.id, completions.wordId))
       .groupBy(frenchWords.id, frenchWords.word)
@@ -35,6 +62,7 @@ export class WordsService {
         if (filteredCompletions.length <= 0) {
           const enrichmentStr = await this.deepseekService.getWordEnrichment(
             word.word,
+            level as Ranking,
           );
 
           // Parse the enrichment string to JSON
@@ -43,10 +71,12 @@ export class WordsService {
           // Store the enrichment in the completions table
           await this.db.insert(completions).values({
             wordId: word.id,
-            content: enrichment, // Store as parsed JSON
+            content: enrichment,
           });
 
           return {
+            id: word.id,
+            userId,
             word: word.word,
             definitions: word.definitions || [],
             completions: enrichment,
@@ -54,9 +84,11 @@ export class WordsService {
         }
 
         return {
+          id: word.id,
+          userId,
           word: word.word,
           definitions: word.definitions || [],
-          completions: filteredCompletions[0], // Take the first completion since they're all the same
+          completions: filteredCompletions[0],
         };
       }),
     );
@@ -74,68 +106,100 @@ export class WordsService {
         word: frenchWords.word,
       })
       .from(frenchWords)
-      .where(
-        or(
-          isNull(frenchWords.ranking),
-          eq(frenchWords.ranking, '')
-        )
-      )
+      .where(or(isNull(frenchWords.ranking), eq(frenchWords.ranking, '')))
       .orderBy(frenchWords.id)
       .offset(offset)
       .limit(pageSize);
 
-    // Convert to CSV format with explicit line breaks
     const pageData = words.map((word) => ({ id: word.id, word: word.word }));
     return pageData;
   }
 
-  async getWordsWithRanking() {
+  async getUserHistory(userId: number) {
+    const userHistory = await this.db
+      .select({
+        word: frenchWords.word,
+        definitions: sql<
+          string[]
+        >`array_agg(DISTINCT ${definitions.definition})`,
+        completions: sql<any[]>`array_agg(DISTINCT ${completions.content})`,
+        seenAt: history.createdAt,
+      })
+      .from(history)
+      .innerJoin(frenchWords, eq(history.wordId, frenchWords.id))
+      .leftJoin(definitions, eq(frenchWords.id, definitions.wordId))
+      .leftJoin(completions, eq(frenchWords.id, completions.wordId))
+      .where(eq(history.userId, userId))
+      .groupBy(frenchWords.word, history.createdAt)
+      .orderBy(desc(history.createdAt));
+
+    return userHistory.map((entry) => ({
+      word: entry.word,
+      definitions: entry.definitions.filter((d) => d !== null) || [],
+      completions: entry.completions.filter((c) => c !== null)[0] || null,
+      seenAt: entry.seenAt,
+    }));
+  }
+
+  async addWordsToHistory(words: any[]) {
+    const historyRecords = words.map(({ id, userId }) => ({
+      userId,
+      wordId: id,
+    }));
+
+    await this.db.insert(history).values(historyRecords);
+  }
+
+  async getWordsWithRanking(step: number = 0) {
+    const pageSize = 2000;
+    const offset = step * pageSize;
+
     const words = await this.db
       .select({
         id: frenchWords.id,
         word: frenchWords.word,
         ranking: frenchWords.ranking,
-        definitions: sql<string[]>`array_agg(DISTINCT ${definitions.definition})`,
+        definitions: sql<
+          string[]
+        >`array_agg(DISTINCT ${definitions.definition})`,
       })
       .from(frenchWords)
       .leftJoin(definitions, eq(frenchWords.id, definitions.wordId))
-      .where(
-        and(
-          isNotNull(frenchWords.ranking),
-          ne(frenchWords.ranking, '')
-        )
-      )
+      .where(and(isNotNull(frenchWords.ranking), ne(frenchWords.ranking, '')))
       .groupBy(frenchWords.id, frenchWords.word, frenchWords.ranking)
-      .orderBy(frenchWords.ranking);
+      .orderBy(frenchWords.ranking)
+      .offset(offset)
+      .limit(pageSize);
 
-    return words.map(word => ({
+    return words.map((word) => ({
       word: word.word,
       ranking: word.ranking,
-      definitions: word.definitions || []
+      definitions: word.definitions || [],
     }));
   }
 
-  async getWordsWithoutRanking() {
+  async getWordsWithoutRanking(step: number = 0) {
+    const pageSize = 2000;
+    const offset = step * pageSize;
     const words = await this.db
       .select({
         id: frenchWords.id,
         word: frenchWords.word,
-        definitions: sql<string[]>`array_agg(DISTINCT ${definitions.definition})`,
+        definitions: sql<
+          string[]
+        >`array_agg(DISTINCT ${definitions.definition})`,
       })
       .from(frenchWords)
       .leftJoin(definitions, eq(frenchWords.id, definitions.wordId))
-      .where(
-        or(
-          isNull(frenchWords.ranking),
-          eq(frenchWords.ranking, '')
-        )
-      )
+      .where(or(isNull(frenchWords.ranking), eq(frenchWords.ranking, '')))
       .groupBy(frenchWords.id, frenchWords.word)
-      .orderBy(frenchWords.word);
+      .orderBy(frenchWords.word)
+      .offset(offset)
+      .limit(pageSize);
 
-    return words.map(word => ({
+    return words.map((word) => ({
       word: word.word,
-      definitions: word.definitions || []
+      definitions: word.definitions || [],
     }));
   }
 }
