@@ -12,6 +12,7 @@ import { eq } from 'drizzle-orm';
 import { users } from 'src/db/schema';
 import { FileUploadService } from 'src/file-upload/file-upload.service';
 import { hashPassword } from 'src/utils/passwords';
+import { Ranking } from 'src/utils/word_ranking';
 
 @Injectable()
 export class UserService {
@@ -55,7 +56,9 @@ export class UserService {
         throw new ConflictException('Email or phone number already exists');
       }
       if (error.message?.includes('Email address is not verified')) {
-        throw new BadRequestException('The sender email address is not verified in AWS SES. Please contact support.');
+        throw new BadRequestException(
+          'The sender email address is not verified in AWS SES. Please contact support.',
+        );
       }
       throw error;
     }
@@ -71,9 +74,13 @@ export class UserService {
       });
     } catch (error) {
       if (error.message?.includes('Email address is not verified')) {
-        throw new BadRequestException('Cannot send verification email: The recipient email address needs to be verified in AWS SES sandbox mode.');
+        throw new BadRequestException(
+          'Cannot send verification email: The recipient email address needs to be verified in AWS SES sandbox mode.',
+        );
       }
-      throw new InternalServerErrorException('Failed to send verification email. Please try again later or contact support.');
+      throw new InternalServerErrorException(
+        'Failed to send verification email. Please try again later or contact support.',
+      );
     }
   }
 
@@ -105,7 +112,9 @@ export class UserService {
       if (error instanceof BadRequestException) {
         throw error;
       }
-      throw new InternalServerErrorException('Failed to resend verification code. Please try again later.');
+      throw new InternalServerErrorException(
+        'Failed to resend verification code. Please try again later.',
+      );
     }
   }
 
@@ -151,6 +160,7 @@ export class UserService {
         phoneNumber: true,
         pictureUrl: true,
         emailConfirmation: true,
+        languageLevel: true,
         createdAt: true,
         updatedAt: true,
       },
@@ -183,6 +193,7 @@ export class UserService {
       resetCode: string;
       resetCodeExpires: Date;
       hashedPassword: string;
+      languageLevel: Ranking;
     }>,
   ) {
     const user = await this.db.query.users.findFirst({
