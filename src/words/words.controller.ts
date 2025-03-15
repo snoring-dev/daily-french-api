@@ -5,6 +5,7 @@ import {
   Query,
   ParseIntPipe,
   Request,
+  DefaultValuePipe,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { WordsService } from './words.service';
@@ -33,12 +34,26 @@ export class WordsController {
   }
 
   @Get('ranked')
-  async getWordsWithRanking(@Query('page', ParseIntPipe) page = 1) {
+  async getWordsWithRanking(
+    @Query(
+      'page',
+      new DefaultValuePipe(1),
+      new ParseIntPipe({ optional: true }),
+    )
+    page = 1,
+  ) {
     return this.wordsService.getWordsWithRanking(page - 1);
   }
 
   @Get('unranked')
-  async getWordsWithoutRanking(@Query('page', ParseIntPipe) page = 1) {
+  async getWordsWithoutRanking(
+    @Query(
+      'page',
+      new DefaultValuePipe(1),
+      new ParseIntPipe({ optional: true }),
+    )
+    page = 1,
+  ) {
     return this.wordsService.getWordsWithoutRanking(page - 1);
   }
 
