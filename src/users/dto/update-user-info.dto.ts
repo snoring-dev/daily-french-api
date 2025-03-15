@@ -1,4 +1,11 @@
-import { IsString, IsOptional, MinLength, Matches } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  MinLength,
+  Matches,
+  Length,
+} from 'class-validator';
+import { Ranking } from 'src/utils/word_ranking';
 
 export class UpdateUserInfoDto {
   @IsOptional()
@@ -10,6 +17,11 @@ export class UpdateUserInfoDto {
   @IsString()
   @MinLength(1)
   lastName?: string;
+
+  @IsOptional()
+  @IsString()
+  @Length(2)
+  languageLevel?: Ranking;
 
   @IsOptional()
   @IsString()
