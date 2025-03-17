@@ -202,4 +202,33 @@ export class WordsService {
       definitions: word.definitions || [],
     }));
   }
+
+  async getWordById(wordId: number) {
+    const word = await this.db
+      .select({
+        id: frenchWords.id,
+        word: frenchWords.word,
+        definitions: sql<
+          string[]
+        >`array_agg(DISTINCT ${definitions.definition})`,
+        completions: sql<any[]>`array_agg(DISTINCT ${completions.content})`,
+      })
+      .from(frenchWords)
+      .where(eq(frenchWords.id, wordId))
+      .leftJoin(definitions, eq(frenchWords.id, definitions.wordId))
+      .leftJoin(completions, eq(frenchWords.id, completions.wordId))
+      .groupBy(frenchWords.id, frenchWords.word)
+      .limit(1);
+
+    if (word.length === 0) {
+      return null;
+    }
+
+    return {
+      id: word[0].id,
+      word: word[0].word,
+      definitions: word[0].definitions.filter((d) => d !== null) || [],
+      completions: word[0].completions.filter((c) => c !== null)[0] || null,
+    };
+  }
 }
