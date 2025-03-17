@@ -78,6 +78,13 @@ export class WordsController {
       throw new NotFoundException(`Word with ID ${wordId} not found`);
     }
 
+    if (word.illustrations.length > 0) {
+      return {
+        word: word.word,
+        imageUrl: word.illustrations[0],
+      };
+    }
+
     if (
       word.completions &&
       word.completions.image &&
@@ -87,9 +94,13 @@ export class WordsController {
         word.completions.image.prompt,
       );
 
+      const imageUrl = imageResult.imageData.images[0].url;
+
+      await this.wordsService.saveWordIllustration(wordId, imageUrl);
+
       return {
         word: word.word,
-        image: imageResult,
+        imageUrl,
       };
     }
 

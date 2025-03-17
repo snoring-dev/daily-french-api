@@ -11,7 +11,13 @@ import {
   inArray,
   desc,
 } from 'drizzle-orm';
-import { definitions, frenchWords, completions, history } from '../db/schema';
+import {
+  definitions,
+  frenchWords,
+  completions,
+  history,
+  wordIllustrations,
+} from '../db/schema';
 import { DeepseekService } from './deepseek.service';
 import { getRankingsUpTo, Ranking } from 'src/utils/word_ranking';
 
@@ -212,11 +218,15 @@ export class WordsService {
           string[]
         >`array_agg(DISTINCT ${definitions.definition})`,
         completions: sql<any[]>`array_agg(DISTINCT ${completions.content})`,
+        illustrations: sql<
+          string[]
+        >`array_agg(DISTINCT ${wordIllustrations.imagePath})`,
       })
       .from(frenchWords)
       .where(eq(frenchWords.id, wordId))
       .leftJoin(definitions, eq(frenchWords.id, definitions.wordId))
       .leftJoin(completions, eq(frenchWords.id, completions.wordId))
+      .leftJoin(wordIllustrations, eq(frenchWords.id, wordIllustrations.wordId))
       .groupBy(frenchWords.id, frenchWords.word)
       .limit(1);
 
@@ -229,6 +239,25 @@ export class WordsService {
       word: word[0].word,
       definitions: word[0].definitions.filter((d) => d !== null) || [],
       completions: word[0].completions.filter((c) => c !== null)[0] || null,
+      illustrations: word[0].illustrations || [],
     };
+  }
+
+  async saveWordIllustration(wordId: number, imageUrl: string) {
+    try {
+      // Insert into word_illustrations table
+      const newIllustration = await this.db
+        .insert(wordIllustrations)
+        .values({
+          wordId: wordId,
+          imagePath: imageUrl,
+        })
+        .returning();
+
+      return newIllustration[0];
+    } catch (error) {
+      console.error('Failed to save word illustration:', error);
+      throw new Error('Failed to save word illustration');
+    }
   }
 }

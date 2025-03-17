@@ -72,6 +72,16 @@ export const definitions = pgTable('definitions', {
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
 
+export const wordIllustrations = pgTable('word_illustrations', {
+  id: serial('id').primaryKey(),
+  wordId: integer('word_id')
+    .references(() => frenchWords.id)
+    .notNull(),
+  imagePath: varchar('image_path', { length: 255 }).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
 export const completions = pgTable('completions', {
   id: serial('id').primaryKey(),
   wordId: integer('word_id')
@@ -101,6 +111,7 @@ export const frenchWordsRelations = relations(frenchWords, ({ many }) => ({
   definitions: many(definitions),
   completions: many(completions),
   history: many(history),
+  illustrations: many(wordIllustrations),
 }));
 
 export const definitionsRelations = relations(definitions, ({ one }) => ({
@@ -113,6 +124,13 @@ export const definitionsRelations = relations(definitions, ({ one }) => ({
 export const completionsRelations = relations(completions, ({ one }) => ({
   word: one(frenchWords, {
     fields: [completions.wordId],
+    references: [frenchWords.id],
+  }),
+}));
+
+export const wordIllustrationsRelations = relations(wordIllustrations, ({ one }) => ({
+  word: one(frenchWords, {
+    fields: [wordIllustrations.wordId],
     references: [frenchWords.id],
   }),
 }));
