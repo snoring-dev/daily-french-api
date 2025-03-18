@@ -216,11 +216,13 @@ export class WordsService {
         word: frenchWords.word,
         definitions: sql<
           string[]
-        >`array_agg(DISTINCT ${definitions.definition})`,
-        completions: sql<any[]>`array_agg(DISTINCT ${completions.content})`,
+        >`array_remove(array_agg(DISTINCT ${definitions.definition}), null)`,
+        completions: sql<
+          any[]
+        >`array_remove(array_agg(DISTINCT ${completions.content}), null)`,
         illustrations: sql<
           string[]
-        >`array_agg(DISTINCT ${wordIllustrations.imagePath})`,
+        >`array_remove(array_agg(DISTINCT ${wordIllustrations.imagePath}), null)`,
       })
       .from(frenchWords)
       .where(eq(frenchWords.id, wordId))
