@@ -9,6 +9,7 @@ import { AuthModule } from './auth/auth.module';
 import { FileUploadModule } from './file-upload/file-upload.module';
 import { AddressModule } from './address/address.module';
 import { WordsModule } from './words/words.module';
+import { VideoExtractionModule } from './video-extraction/video-extraction.module';
 
 @Module({
   imports: [
@@ -36,6 +37,7 @@ import { WordsModule } from './words/words.module';
     FileUploadModule,
     AddressModule,
     WordsModule,
+    VideoExtractionModule,
   ],
   controllers: [AppController],
   providers: [AppService],
