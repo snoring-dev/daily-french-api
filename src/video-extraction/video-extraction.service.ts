@@ -20,16 +20,13 @@ export class VideoExtractionService {
 
       // Check if the URL is from Facebook
       if (this.isFacebookUrl(url)) {
-        // Try the newer yt-dlp extraction method first
+        // First try with yt-dlp extraction
         try {
           return await this.facebookExtractionService.extractFacebookVideo(url);
         } catch (error) {
-          // Fall back to the HTML scraping method if yt-dlp fails
+          // Fall back to HTML scraping method if yt-dlp fails
           this.logger.warn(
             `Facebook yt-dlp extraction failed, falling back to HTML extraction: ${error.message}`,
-          );
-          return await this.facebookExtractionService.extractFacebookVideoInfo(
-            url,
           );
         }
       }
