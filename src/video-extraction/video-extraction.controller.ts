@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, UseGuards } from '@nestjs/common';
+import { Controller, Post, Body, UseGuards } from '@nestjs/common';
 import { VideoExtractionService } from './video-extraction.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { VideoExtractionDto } from './video-extraction.types';
@@ -9,11 +9,6 @@ export class VideoExtractionController {
   constructor(
     private readonly videoExtractionService: VideoExtractionService,
   ) {}
-
-  @Get()
-  getHello(): string {
-    return this.videoExtractionService.getHello();
-  }
 
   @Post()
   extractVideo(@Body() videoExtractionDto: VideoExtractionDto): Promise<any> {
