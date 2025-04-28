@@ -5,6 +5,7 @@ import { VideoExtractionService } from './video-extraction.service';
 import { YoutubeExtractionService } from './youtube-extraction.service';
 import { FacebookExtractionService } from './facebook-extraction.service';
 import { InstagramExtractionService } from './instagram-extraction.service';
+import { TikTokExtractionService } from './tiktok-extraction.service';
 
 @Module({
   imports: [HttpModule],
@@ -14,6 +15,7 @@ import { InstagramExtractionService } from './instagram-extraction.service';
     YoutubeExtractionService,
     FacebookExtractionService,
     InstagramExtractionService,
+    TikTokExtractionService,
   ],
   exports: [VideoExtractionService],
 })
