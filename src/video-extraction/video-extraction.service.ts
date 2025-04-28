@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { YoutubeExtractionService } from './youtube-extraction.service';
 import { FacebookExtractionService } from './facebook-extraction.service';
+import { InstagramExtractionService } from './instagram-extraction.service';
 
 @Injectable()
 export class VideoExtractionService {
@@ -9,6 +10,7 @@ export class VideoExtractionService {
   constructor(
     private readonly youtubeExtractionService: YoutubeExtractionService,
     private readonly facebookExtractionService: FacebookExtractionService,
+    private readonly instagramExtractionService: InstagramExtractionService,
   ) {}
 
   async extractVideo(url: string): Promise<any> {
@@ -31,6 +33,19 @@ export class VideoExtractionService {
         }
       }
 
+      if (this.isInstagramUrl(url)) {
+        try {
+          return await this.instagramExtractionService.extractInstagramVideo(
+            url,
+          );
+        } catch (error) {
+          // Fall back to HTML scraping method if yt-dlp fails
+          this.logger.warn(
+            `Instagram yt-dlp extraction failed, falling back to HTML extraction: ${error.message}`,
+          );
+        }
+      }
+
       throw new Error(`Unsupported video URL: ${url}`);
     } catch (error) {
       this.logger.error(`Video extraction failed: ${error.message}`);
@@ -48,6 +63,16 @@ export class VideoExtractionService {
       url.includes('fb.com') ||
       url.includes('fb.watch') ||
       url.includes('mibextid=wwXIfr')
+    );
+  }
+
+  private isInstagramUrl(url: string): boolean {
+    return (
+      url.includes('instagram.com') ||
+      url.includes('instagr.am') ||
+      url.includes('instagram.com/reel') ||
+      url.includes('instagram.com/p/') ||
+      url.includes('igsh=')
     );
   }
 }

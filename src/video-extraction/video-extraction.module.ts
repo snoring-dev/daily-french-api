@@ -4,6 +4,7 @@ import { VideoExtractionController } from './video-extraction.controller';
 import { VideoExtractionService } from './video-extraction.service';
 import { YoutubeExtractionService } from './youtube-extraction.service';
 import { FacebookExtractionService } from './facebook-extraction.service';
+import { InstagramExtractionService } from './instagram-extraction.service';
 
 @Module({
   imports: [HttpModule],
@@ -12,6 +13,7 @@ import { FacebookExtractionService } from './facebook-extraction.service';
     VideoExtractionService,
     YoutubeExtractionService,
     FacebookExtractionService,
+    InstagramExtractionService,
   ],
   exports: [VideoExtractionService],
 })
