@@ -45,7 +45,8 @@ export class TikTokExtractionService {
       const outputArgs = '--print-json';
 
       // Prevent partial file creation and use a simple output name to avoid filename-too-long errors
-      const fileArgs = '--no-part --output "tt_video_%(id)s.%(ext)s"';
+      const fileArgs =
+        '--no-part --output "public/videos/tt_video_%(id)s.%(ext)s"';
 
       // Combine all arguments
       const fullCommand = `yt-dlp ${baseArgs} ${ttArgs} ${formatArgs} ${outputArgs} ${fileArgs} "${url}"`;
@@ -56,6 +57,8 @@ export class TikTokExtractionService {
       // Parse the JSON response
       const fullData = JSON.parse(stdout);
 
+      const downloadedVideoPath = `public/videos/tt_video_${fullData.id}.${fullData.ext || 'mp4'}`;
+
       // Extract video info with all quality options
       return {
         id: fullData.id || this.extractVideoId(url),
@@ -65,6 +68,7 @@ export class TikTokExtractionService {
         duration: fullData.duration,
         formats: this.categorizeFormats(fullData.formats),
         author: fullData.uploader || fullData.channel || '',
+        downloadedVideoPath,
       };
     } catch (error) {
       this.logger.error(`TikTok yt-dlp extraction failed: ${error.message}`);

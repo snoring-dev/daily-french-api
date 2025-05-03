@@ -13,4 +13,5 @@ export interface VideoDTO {
   description?: string;
   thumbnailUrl?: string;
   author?: string;
+  downloadedVideoPath?: string;
 }

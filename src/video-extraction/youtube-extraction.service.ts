@@ -1,8 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { promisify } from 'util';
 import { exec } from 'child_process';
+import * as fs from 'fs';
+import * as path from 'path';
 
 const execAsync = promisify(exec);
+const mkdirAsync = promisify(fs.mkdir);
 
 @Injectable()
 export class YoutubeExtractionService {
@@ -13,7 +16,6 @@ export class YoutubeExtractionService {
     const isShort = this.isYoutubeShort(url);
 
     try {
-      // Try yt-dlp first with optimized settings for Shorts
       return await this.extractWithYtDlp(url, isShort);
     } catch (error) {
       this.logger.warn(`YouTube yt-dlp extraction failed: ${error.message}`);
@@ -57,7 +59,7 @@ export class YoutubeExtractionService {
       const fullData = JSON.parse(stdout);
 
       // Extract video info with all quality options
-      return {
+      const videoInfo = {
         id: fullData.id,
         title: fullData.title,
         defaultUrl: this.getBestVideoUrl(fullData),
@@ -65,10 +67,59 @@ export class YoutubeExtractionService {
         duration: fullData.duration,
         formats: this.categorizeFormats(fullData.formats),
       };
+
+      // Download and save the video
+      const { filePath } = await this.downloadVideoToPublicFolder(
+        url,
+        fullData.id,
+      );
+
+      // Add local file information to the response
+      return {
+        ...videoInfo,
+        downloadedVideoPath: filePath,
+      };
     } catch (error) {
       this.logger.error(`YouTube yt-dlp extraction failed: ${error.message}`);
       throw new Error(`YouTube video extraction failed: ${error.message}`);
     }
+  }
+
+  // Helper method to download video to public folder
+  private async downloadVideoToPublicFolder(
+    url: string,
+    videoId: string,
+  ): Promise<{
+    filePath: string;
+    fileName: string;
+  }> {
+    // Create a unique filename with timestamp and video ID
+    const fileName = `${Date.now()}_${videoId}.mp4`;
+
+    // Define the destination directory
+    const publicVideosDir = path.join(process.cwd(), 'public', 'videos');
+
+    // Ensure the directory exists
+    await this.ensureDirectoryExists(publicVideosDir);
+
+    // Full path to save the file
+    const filePath = path.join(publicVideosDir, fileName);
+
+    // yt-dlp command to download video in mp4 format
+    const baseArgs = '--no-check-certificates --no-warnings';
+    const formatArgs = '-f "bestvideo[ext=mp4]+bestaudio[ext=m4a]/mp4"';
+    const outputArgs = `-o "${filePath}"`;
+
+    const fullCommand = `yt-dlp ${baseArgs} ${formatArgs} ${outputArgs} "${url}"`;
+
+    // Execute the command
+    this.logger.log(`Downloading video from ${url} to ${filePath}`);
+    await execAsync(fullCommand, { timeout: 60000 }); // Increased timeout for download
+
+    return {
+      filePath,
+      fileName,
+    };
   }
 
   // Get the best default video URL for immediate playback
@@ -187,5 +238,17 @@ export class YoutubeExtractionService {
     }
 
     return videoId;
+  }
+
+  // Helper method to ensure directory exists
+  private async ensureDirectoryExists(directory: string): Promise<void> {
+    try {
+      await mkdirAsync(directory, { recursive: true });
+    } catch (error) {
+      // If error is not 'directory already exists', rethrow it
+      if (error.code !== 'EEXIST') {
+        throw error;
+      }
+    }
   }
 }

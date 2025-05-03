@@ -8,6 +8,8 @@ import {
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import axios from 'axios';
 import { v4 as uuidv4 } from 'uuid';
+import * as fs from 'fs';
+import * as path from 'path';
 
 @Injectable()
 export class S3Service {
@@ -47,7 +49,7 @@ export class S3Service {
     return key;
   }
 
-  async getPresignedUrl(key: string): Promise<string> {
+  async getPresignedUrl(key: string, hours = 2): Promise<string> {
     const bucketName = this.bucketName;
 
     const command = new GetObjectCommand({
@@ -56,7 +58,7 @@ export class S3Service {
     });
 
     // Generate a pre-signed URL that expires in 2 hour
-    return getSignedUrl(this.s3Client, command, { expiresIn: 3600 * 2 });
+    return getSignedUrl(this.s3Client, command, { expiresIn: 3600 * hours });
   }
 
   /**
@@ -125,5 +127,27 @@ export class S3Service {
   private getFileExtension(url: string): string {
     const match = url.match(/\.(png|jpg|jpeg|gif|webp)(\?.*)?$/i);
     return match ? `.${match[1].toLowerCase()}` : '.png'; // Default to .png if no extension found
+  }
+
+  /**
+   * Uploads a video from a local path to S3
+   * @param videoPath The local path of the video file
+   * @returns The public URL of the uploaded video
+   */
+  async uploadVideoFromPath(
+    videoPath: string,
+  ): Promise<{ s3Url: string; s3Key: string }> {
+    try {
+      const buffer = fs.readFileSync(videoPath);
+      const filename = path.basename(videoPath);
+      const s3Key = `videos/${uuidv4()}-${filename}`;
+      const contentType = 'video/mp4';
+      await this.uploadFile(buffer, s3Key, contentType);
+      const s3Url = await this.getPresignedUrl(s3Key, 24);
+      return Promise.resolve({ s3Url, s3Key });
+    } catch (error) {
+      console.error('Error uploading video to S3:', error);
+      throw new Error('Failed to upload video to S3');
+    }
   }
 }

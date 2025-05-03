@@ -46,7 +46,8 @@ export class FacebookExtractionService {
       const outputArgs = '--print-json';
 
       // Prevent partial file creation and use a simple output name to avoid filename-too-long errors
-      const fileArgs = '--no-part --output "fb_video_%(id)s.%(ext)s"';
+      const fileArgs =
+        '--no-part --output "public/videos/fb_video_%(id)s.%(ext)s"';
 
       // Combine all arguments
       const fullCommand = `yt-dlp ${baseArgs} ${fbArgs} ${formatArgs} ${outputArgs} ${fileArgs} "${url}"`;
@@ -57,6 +58,8 @@ export class FacebookExtractionService {
       // Parse the JSON response
       const fullData = JSON.parse(stdout);
 
+      const downloadedVideoPath = `public/videos/fb_video_${fullData.id}.${fullData.ext || 'mp4'}`;
+
       // Extract video info with all quality options
       return {
         id: fullData.id || this.extractVideoId(url),
@@ -65,6 +68,7 @@ export class FacebookExtractionService {
         thumbnail: fullData.thumbnail,
         duration: fullData.duration,
         formats: this.categorizeFormats(fullData.formats),
+        downloadedVideoPath,
       };
     } catch (error) {
       this.logger.error(`Facebook yt-dlp extraction failed: ${error.message}`);

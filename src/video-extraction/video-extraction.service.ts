@@ -130,6 +130,7 @@ export class VideoExtractionService {
       description: '',
       thumbnailUrl: response.thumbnail || '',
       author: '',
+      downloadedVideoPath: response.downloadedVideoPath,
     };
   }
 
@@ -140,6 +141,7 @@ export class VideoExtractionService {
       description: '',
       thumbnailUrl: response.thumbnail || '',
       author: '',
+      downloadedVideoPath: response.downloadedVideoPath,
     };
   }
 
@@ -150,6 +152,7 @@ export class VideoExtractionService {
       description: '',
       thumbnailUrl: response.thumbnail || '',
       author: response.author || '',
+      downloadedVideoPath: response.downloadedVideoPath,
     };
   }
 
@@ -160,6 +163,7 @@ export class VideoExtractionService {
       description: '',
       thumbnailUrl: response.thumbnail || '',
       author: response.author || '',
+      downloadedVideoPath: response.downloadedVideoPath,
     };
   }
 
