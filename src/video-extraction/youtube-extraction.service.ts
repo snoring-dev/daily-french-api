@@ -111,10 +111,13 @@ export class YoutubeExtractionService {
 
     // yt-dlp command to download video in mp4 format
     const baseArgs = '--no-check-certificates --no-warnings';
+    // Add cookies from browser and user agent to bypass bot protection
+    const antiBot =
+      '--cookies-from-browser chrome --user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"';
     const formatArgs = '-f "bestvideo[ext=mp4]+bestaudio[ext=m4a]/mp4"';
     const outputArgs = `-o "${filePath}"`;
 
-    const fullCommand = `yt-dlp ${baseArgs} ${formatArgs} ${outputArgs} "${url}"`;
+    const fullCommand = `yt-dlp ${baseArgs} ${antiBot} ${formatArgs} ${outputArgs} "${url}"`;
 
     // Execute the command
     this.logger.log(`Downloading video from ${url} to ${filePath}`);
