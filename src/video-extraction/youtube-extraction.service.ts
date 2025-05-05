@@ -58,14 +58,18 @@ export class YoutubeExtractionService {
       // Parse the JSON response
       const fullData = JSON.parse(stdout);
 
+      if (!fullData || !fullData.id) {
+        throw new Error('Invalid or incomplete data received from yt-dlp');
+      }
+
       // Extract video info with all quality options
       const videoInfo = {
         id: fullData.id,
-        title: fullData.title,
+        title: fullData.title || 'Unknown title',
         defaultUrl: this.getBestVideoUrl(fullData),
-        thumbnail: fullData.thumbnail,
-        duration: fullData.duration,
-        formats: this.categorizeFormats(fullData.formats),
+        thumbnail: fullData.thumbnail || null,
+        duration: fullData.duration || 0,
+        formats: this.categorizeFormats(fullData.formats || []),
       };
 
       // Download and save the video
@@ -124,6 +128,11 @@ export class YoutubeExtractionService {
 
   // Get the best default video URL for immediate playback
   private getBestVideoUrl(data: any): string {
+    if (!data || !data.formats || !Array.isArray(data.formats)) {
+      this.logger.warn('No valid formats found for video URL extraction');
+      return null;
+    }
+
     // Filter out storyboard and ensure both audio and video
     const videoFormats = data.formats.filter(
       (format) =>
@@ -141,7 +150,15 @@ export class YoutubeExtractionService {
 
   // Categorize formats by quality for user selection
   private categorizeFormats(formats: any[]): any {
-    if (!formats || !Array.isArray(formats)) return {};
+    if (!formats || !Array.isArray(formats) || formats.length === 0) {
+      this.logger.warn('No valid formats found for categorization');
+      return {
+        high: [],
+        medium: [],
+        low: [],
+        default: null,
+      };
+    }
 
     // Filter playable formats (with both audio and video)
     const playableFormats = formats.filter(
@@ -150,6 +167,16 @@ export class YoutubeExtractionService {
         format.acodec !== 'none' &&
         !format.format_note?.includes('storyboard'),
     );
+
+    if (playableFormats.length === 0) {
+      this.logger.warn('No playable formats found with both audio and video');
+      return {
+        high: [],
+        medium: [],
+        low: [],
+        default: null,
+      };
+    }
 
     // Sort by quality
     playableFormats.sort((a, b) => (b.height || 0) - (a.height || 0));
@@ -180,19 +207,26 @@ export class YoutubeExtractionService {
 
   // Format video info
   private formatVideoInfo(format: any): any {
+    if (!format) return null;
+
     return {
-      format_id: format.format_id,
-      quality: `${format.height}p`,
-      url: format.url,
-      resolution: `${format.width}x${format.height}`,
-      filesize: format.filesize || format.filesize_approx,
-      tbr: format.tbr,
+      format_id: format.format_id || 'unknown',
+      quality: format.height ? `${format.height}p` : 'unknown',
+      url: format.url || null,
+      resolution:
+        format.width && format.height
+          ? `${format.width}x${format.height}`
+          : 'unknown',
+      filesize: format.filesize || format.filesize_approx || 0,
+      tbr: format.tbr || 0,
       fps: format.fps || 30,
     };
   }
 
   // Select best default format (balancing quality vs size)
   private selectDefaultFormat(formats: any[]): any {
+    if (!formats || formats.length === 0) return null;
+
     // Prefer 1080p if available and not too large
     const fullHD = formats.find((f) => f.height === 1080);
     if (fullHD) {
@@ -210,19 +244,33 @@ export class YoutubeExtractionService {
   }
 
   private async extractShortWithCustomMethod(url: string): Promise<any> {
-    // Implement custom extraction logic for Shorts
-    // This could involve web scraping or using an alternative API
+    try {
+      const videoId = this.extractVideoId(url);
 
-    // Example implementation using axios to fetch page and extract player config
-    const videoId = this.extractVideoId(url);
+      if (!videoId) {
+        throw new Error('Could not extract video ID from URL');
+      }
 
-    // Custom extraction logic would go here
-    // (This is a placeholder - actual implementation would be more complex)
-
-    return {
-      id: videoId,
-      // Other fields would be populated from extraction
-    };
+      // This is a placeholder for a custom extraction method
+      // For now, return minimal working data to prevent errors
+      return {
+        id: videoId,
+        title: 'YouTube Short',
+        defaultUrl: null,
+        thumbnail: null,
+        duration: 0,
+        formats: {
+          high: [],
+          medium: [],
+          low: [],
+          default: null,
+        },
+        downloadedVideoPath: null,
+      };
+    } catch (error) {
+      this.logger.error(`Custom extraction for Short failed: ${error.message}`);
+      throw new Error(`YouTube Short extraction failed: ${error.message}`);
+    }
   }
 
   private extractVideoId(url: string): string {
