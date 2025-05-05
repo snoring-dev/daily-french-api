@@ -105,13 +105,16 @@ export class VideoExtractionService {
   }
 
   private isInstagramUrl(url: string): boolean {
-    return (
-      url.includes('instagram.com') ||
-      url.includes('instagr.am') ||
-      url.includes('instagram.com/reel') ||
-      url.includes('instagram.com/p/') ||
-      url.includes('igsh=')
-    );
+    const instagramPatterns = [
+      /instagram\.com/i,
+      /instagr\.am/i,
+      /instagram\.com\/reel/i,
+      /instagram\.com\/p\//i,
+      /igsh=/i,
+      /instagram\.com\/reel\/[A-Z]/i,
+    ];
+
+    return instagramPatterns.some((pattern) => pattern.test(url));
   }
 
   private isTiktokUrl(url: string): boolean {
