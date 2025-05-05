@@ -138,6 +138,9 @@ export class S3Service {
     videoPath: string,
   ): Promise<{ s3Url: string; s3Key: string }> {
     try {
+      if (!videoPath) {
+        throw new Error('Video path is null or undefined');
+      }
       const buffer = fs.readFileSync(videoPath);
       const filename = path.basename(videoPath);
       const s3Key = `videos/${uuidv4()}-${filename}`;
