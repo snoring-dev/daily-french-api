@@ -52,10 +52,9 @@ export class YoutubeShortExtractionService {
       // Enhanced options for more reliable extraction
       const baseArgs = '--no-check-certificates --no-warnings --no-progress';
 
-      // Mobile user-agent and cookies to bypass restrictions (similar to Instagram approach)
+      // Mobile user-agent to bypass restrictions (removed cookies dependency)
       const mobileArgs =
         '--user-agent "Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/604.1"';
-      const cookieArgs = '--cookies-from-browser chrome';
 
       // YouTube Shorts specific settings
       const shortsArgs = '--extractor-args "youtube:player_client=android,ios"';
@@ -74,8 +73,8 @@ export class YoutubeShortExtractionService {
       const timestamp = Date.now();
       const fileArgs = `--no-part --output "public/videos/yt_short_${videoId}_${timestamp}.mp4"`;
 
-      // Combine all arguments
-      const fullCommand = `yt-dlp ${baseArgs} ${mobileArgs} ${cookieArgs} ${shortsArgs} ${formatArgs} ${outputArgs} ${advancedArgs} ${fileArgs} "${cleanUrl}"`;
+      // Combine all arguments (removed cookieArgs)
+      const fullCommand = `yt-dlp ${baseArgs} ${mobileArgs} ${shortsArgs} ${formatArgs} ${outputArgs} ${advancedArgs} ${fileArgs} "${cleanUrl}"`;
 
       // Execute with timeout for safety
       const { stdout } = await execAsync(fullCommand, { timeout: 45000 });
