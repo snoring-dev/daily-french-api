@@ -1,16 +1,16 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { YoutubeExtractionService } from './youtube-extraction.service';
 import { FacebookExtractionService } from './facebook-extraction.service';
 import { InstagramExtractionService } from './instagram-extraction.service';
 import { TikTokExtractionService } from './tiktok-extraction.service';
 import { VideoDTO } from './video-extraction.types';
+import { YoutubeShortExtractionService } from './youtube-shorts-extraction.service';
 
 @Injectable()
 export class VideoExtractionService {
   private readonly logger = new Logger(VideoExtractionService.name);
 
   constructor(
-    private readonly youtubeExtractionService: YoutubeExtractionService,
+    private readonly youtubeExtractionService: YoutubeShortExtractionService,
     private readonly facebookExtractionService: FacebookExtractionService,
     private readonly instagramExtractionService: InstagramExtractionService,
     private readonly tiktokExtractionService: TikTokExtractionService,
@@ -20,7 +20,7 @@ export class VideoExtractionService {
     try {
       if (this.isYoutubeUrl(url)) {
         const ytbData =
-          await this.youtubeExtractionService.extractYoutubeVideo(url);
+          await this.youtubeExtractionService.extractYoutubeShort(url);
         return Promise.resolve(this.transformVideoResponse('youtube', ytbData));
       }
 
